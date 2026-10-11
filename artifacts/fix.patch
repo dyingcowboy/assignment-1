@@ -1,5 +1,5 @@
 diff --git a/src/chess_app/game.py b/src/chess_app/game.py
-index f153e00..33262d3 100644
+index f153e00..baa197f 100644
 --- a/src/chess_app/game.py
 +++ b/src/chess_app/game.py
 @@ -75,9 +75,10 @@ class ChessGame:
@@ -9,7 +9,7 @@ index f153e00..33262d3 100644
 -            reply = self._choose_engine_move()
 -            engine_move = reply.uci()
 -            self._record_and_push(reply)
-+            if self._board.outcome(claim_draw=True) is None:
++            if not human_state["game_over"]:
 +                reply = self._choose_engine_move()
 +                engine_move = reply.uci()
 +                self._record_and_push(reply)

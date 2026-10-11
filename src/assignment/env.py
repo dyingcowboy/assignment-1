@@ -5,9 +5,11 @@ from pathlib import PurePath
 from typing import Any
 
 import modal
+from dotenv import load_dotenv
 from swerex.deployment.modal import ModalDeployment
 from swerex.runtime.abstract import Command
-from swerex.runtime.remote import RemoteRuntime
+
+from assignment.sandbox_runtime import AssignmentRemoteRuntime
 
 
 def _tls_port_configuration(
@@ -67,7 +69,7 @@ class AssignmentModalDeployment(ModalDeployment):
             await asyncio.sleep(1)
             self.logger.info("Starting SWE-ReX runtime at %s", tunnel.url)
             self._hooks.on_custom_step("Starting runtime")
-            self._runtime = RemoteRuntime(
+            self._runtime = AssignmentRemoteRuntime(
                 host=tunnel.url,
                 timeout=self._runtime_timeout,
                 auth_token=token,
@@ -135,6 +137,9 @@ class Environment:
                 without this ``python`` is conda's base environment, where the
                 repository and its dependencies are not installed.
         """
+        # The evaluation script also creates environments without importing
+        # Agent, so load project proxy settings here for both entry points.
+        load_dotenv()
         self.cwd = cwd
         # Merged into every command's environment; a per-call `env` wins.
         self.env_defaults: dict[str, str] = {}

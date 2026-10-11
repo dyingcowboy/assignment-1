@@ -16,6 +16,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from openai import OpenAI
+import yaml
 
 from assignment.env import Environment
 from assignment.agent.tools import INVOKE_SKILL_TOOL
@@ -152,6 +153,7 @@ class Agent:
 
         # TODO(1.1.a): Add machinery to maintain agent state as it takes actions
         # and observes the results.
+        self.history: list[dict[str, Any]] = []
 
     def load_skills(self, skills_path: Path) -> dict[str, dict[str, str]]:
         """Load the skill folders exposed to this agent."""
@@ -164,7 +166,54 @@ class Agent:
         # ``content`` of the skill file for ``invoke_skill``. Reject duplicate
         # names and malformed or missing frontmatter with a clear
         # ``ValueError``.
-        raise NotImplementedError
+        if not skills_path.is_dir():
+            raise ValueError(f"Skills path must be a directory, got {skills_path}")
+
+        skills = {}
+
+        for directory in sorted(skills_path.iterdir()):
+            if not directory.is_dir():
+                continue
+
+            skill_file = directory / "SKILL.md"
+            if not skill_file.is_file():
+                continue
+
+            content = skill_file.read_text(encoding="utf-8")
+
+            lines = content.splitlines()
+            if not lines or lines[0].strip() != "---":
+                raise ValueError(f"Missing frontmatter in {skill_file}")
+            try:
+                closing = lines.index("---", 1)
+            except ValueError as exc:
+                raise ValueError(f"unlosed YAML frontmatter: {skill_file}") from exc
+
+            frontmatter = "\n".join(lines[1:closing])
+            try:
+                data = yaml.safe_load(frontmatter)
+            except yaml.YAMLError as exc:
+                raise ValueError(f"Invalid YAML frontmatter in {skill_file}: {exc}") from exc
+            
+            if not isinstance(data, dict):
+                raise ValueError(f"Frontmatter must be a mapping: {skill_file}")
+
+            name = data.get("name")
+            description = data.get("description")
+            if not isinstance(name, str) or not name.strip():
+                raise ValueError(f"Missing or invalid skill name: {skill_file}")
+            if not isinstance(description, str) or not description.strip():
+                raise ValueError(f"Missing or invalid description: {skill_file}")
+
+            if name in skills:
+                raise ValueError(f"Duplicate skill name: {name}")
+            skills[name] = {
+                "metadata": f"name: {name}\ndescription: {description}",
+                "content": content,
+            }
+
+        return skills
+
 
     def query_language_model(self) -> dict[str, Any]:
         """Send one tool-enabled Chat Completions request and normalize it."""
@@ -227,7 +276,11 @@ class Agent:
 
         # You want to be careful about which attributes of the class you modify
         # here as they may also be handled by the subclasses.
-        raise NotImplementedError
+        return [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.task_prompt},
+            *deepcopy(self.history)
+        ]
 
     def estimate_active_prompt_tokens(self) -> int:
         """Estimate the next prompt, calibrated by the provider's latest usage."""
@@ -330,13 +383,24 @@ class Agent:
             # step. Ensure you identify when the agent has completed the task
             # by setting `Agent.finished`. If the agent exceeds the
             # `step_limit`, raise `StepLimitError`.
+            while not self.finished:
+                if self.step_limit is not None and self.steps_taken >= self.step_limit:
+                    raise StepLimitError("Agent reached its step limit.")
+                message = self.query_language_model()
+                self.history.append(message)
 
+                tool_calls = message.get("tool_calls") or []
+                if tool_calls:
+                    observations = self.execute_tool_calls(tool_calls)
+                    self.history.extend(observations)
+
+                # TODO(2.1) Check if the agent has completed the task and set
             # TODO(2.2) Call `maybe_compact_context()` before each new action
             # request in your shared loop. It already estimates active tokens
             # and handles the threshold, and tracks compaction events for
             # logging.
 
-            raise NotImplementedError
+
         finally:
             # This block is provided infrastructure. Do not modify it: a
             # trajectory is required even when a run fails.

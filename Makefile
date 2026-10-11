@@ -17,8 +17,9 @@ SWEBENCH_PATCH ?= artifacts/$(INSTANCE).patch
 SWEBENCH_TRAJECTORY ?= artifacts/$(INSTANCE)-trajectory.json
 TRAJECTORY ?= artifacts/part3-trajectory.json
 RESULT ?= artifacts/game-result.json
-MODEL ?= deepseek/deepseek-v4-flash-0731
-DEEPSEEK_MODEL ?= deepseek/deepseek-v4-flash-0731
+# Self-study default: DeepSeek official API, matching the local .env.
+MODEL ?= deepseek-flash
+DEEPSEEK_MODEL ?= deepseek-flash
 GPT_OSS_MODEL ?= openai/gpt-oss-120b
 MODEL_TAG ?= $(subst /,-,$(MODEL))
 COMPACT_THRESHOLD ?= 6000

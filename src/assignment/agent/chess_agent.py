@@ -107,7 +107,7 @@ class ChessAgent(Agent):
         )
 
         # TODO(Part 3): Register the play_move tool schema from tools.py.
-
+        self.tools.append(PLAY_MOVE_TOOL)
         if programmatic_tools:
             self.tools.append(RUN_PYTHON_TOOL)
 
@@ -158,6 +158,21 @@ class ChessAgent(Agent):
 
         return format_chess_state(state, include_legal_moves=self.include_legal_moves)
 
+    def _refresh_live_state(self) -> str:
+        """Synchronize completion with the server, preserving recoverable errors."""
+
+        try:
+            new_state = _game_state(self.chess_client)
+            formatted_state = self.format_state(new_state)
+            self.last_state = new_state
+            self.finished = bool(new_state.get("game_over"))
+            return formatted_state
+        except Exception as exc:
+            return (
+                "<chess_error>Could not refresh the live board: "
+                f"{exc}</chess_error>"
+            )
+
     def execute_tool_calls(
         self, tool_calls: list[dict[str, Any]]
     ) -> list[dict[str, str]]:
@@ -174,7 +189,68 @@ class ChessAgent(Agent):
         # 4. Link every observation to its call with tool_call_id.
         # 5. Turn malformed, unknown, rejected, or extra parallel calls into
         #    recoverable <chess_error> observations instead of crashing.
+        observations: list[dict[str, str]] = []
+        registered_names = {
+            tool.get("function", {}).get("name") for tool in self.tools
+        }
+        live_action_taken = False
+        for call in tool_calls:
+            call_id = call.get("id", "") if isinstance(call, dict) else ""
+            observation = {
+                "role": "tool",
+                "tool_call_id": call_id if isinstance(call_id, str) else "",
+                "content": "",
+            }
+            observations.append(observation)
+            try:
+                if not isinstance(call, dict) or not isinstance(call_id, str) or not call_id:
+                    raise ValueError("Tool calls require a non-empty string id.")
+                function = call.get("function")
+                if not isinstance(function, dict):
+                    raise ValueError("Tool calls require a function object.")
+                tool_name = function.get("name")
+                arguments = function.get("arguments")
+                if not isinstance(tool_name, str) or tool_name not in registered_names:
+                    raise ValueError(f"Unknown or unregistered tool: {tool_name}")
+                if not isinstance(arguments, str):
+                    raise ValueError("Tool arguments must be a JSON string.")
 
-        # TODO(Part 3.3-4): add cases for simulate_move and run_python, with
-        # linked observations and recoverable errors, just like the old tool.
-        raise NotImplementedError
+                # Calls in this batch were chosen from the same board. A move
+                # or Python snippet can change it, invalidating later actions.
+                if tool_name in {"play_move", "run_python"}:
+                    if self.finished:
+                        raise ValueError("The game is over; no further live actions are allowed.")
+                    if live_action_taken:
+                        raise ValueError("Only one live action is allowed per batch of tool calls.")
+                    live_action_taken = True
+
+                if tool_name == "play_move":
+                    result = _play_move(self.chess_client, arguments)
+                    if result.startswith("<chess_error>"):
+                        # An error does not prove the board stayed unchanged:
+                        # the move may have committed before a disconnect, or
+                        # the server may already have reached a terminal state.
+                        observation["content"] = result + "\n\n" + self._refresh_live_state()
+                        continue
+                    new_state = json.loads(result)
+                    if not isinstance(new_state, dict):
+                        raise ValueError("The played move must return a game state object.")
+                    observation["content"] = self.format_state(new_state)
+                    self.last_state = new_state
+                    self.finished = bool(new_state.get("game_over"))
+                elif tool_name == "simulate_move":
+                    observation["content"] = _simulate_move(self.chess_client, arguments)
+                elif tool_name == "invoke_skill":
+                    observation["content"] = _invoke_skill(self.skills, arguments)
+                elif tool_name == "run_python":
+                    observation["content"] = _run_python(
+                        self.env, self.python_sandbox_port, arguments
+                    )
+                    # A snippet may commit a move before returning an error.
+                    # Always re-read the live board after the runner returns.
+                    observation["content"] += "\n\n" + self._refresh_live_state()
+                else:
+                    raise ValueError(f"Unsupported tool: {tool_name}")
+            except Exception as exc:
+                observation["content"] = f"<chess_error>{exc}</chess_error>"
+        return observations

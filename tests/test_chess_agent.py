@@ -4,6 +4,7 @@ import json
 
 import httpx
 import pytest
+from openai.types.chat import ChatCompletion
 
 from assignment.agent import ChessAgent
 from assignment.agent.chess_agent import format_chess_state
@@ -147,4 +148,104 @@ def test_rejected_and_malformed_moves_are_recoverable(make_agent):
 
     assert "<chess_error>" in rejected[0]["content"]
     assert "<chess_error>" in malformed[0]["content"]
+    assert make_agent.finished is False
+
+
+def test_chess_loop_recovers_from_text_and_stops_on_terminal_move(make_agent, monkeypatch):
+    monkeypatch.setitem(UPDATED_STATE, "game_over", True)
+    responses = [
+        {"role": "assistant", "content": "I choose e2e4."},
+        {"role": "assistant", "content": "", "tool_calls": [tool_call("e2e4")]},
+    ]
+    requests = []
+
+    def create(**kwargs):
+        requests.append(kwargs)
+        message = responses[len(requests) - 1]
+        return ChatCompletion.model_validate({
+            "id": "chatcmpl-test",
+            "object": "chat.completion",
+            "created": 0,
+            "model": "test-model",
+            "choices": [{
+                "index": 0,
+                "finish_reason": "tool_calls" if message.get("tool_calls") else "stop",
+                "message": message,
+            }],
+        })
+
+    make_agent.client.chat.completions.create = create
+    make_agent.run()
+
+    assert len(requests) == 2
+    assert requests[1]["tool_choice"] == "required"
+    assert make_agent.history[0]["content"] == "I choose e2e4."
+    assert make_agent.finished is True
+    assert make_agent.last_state["game_over"] is True
+
+
+@pytest.mark.parametrize("disconnected", [False, True])
+def test_move_error_refreshes_terminal_state_and_stops_loop(make_agent, disconnected):
+    terminal_state = {**UPDATED_STATE, "game_over": True, "legal_moves": [], "status": "Draw"}
+    requests = []
+    model_calls = []
+
+    def handler(request):
+        requests.append((request.method, request.url.path))
+        if request.url.path == "/api/move":
+            if disconnected:
+                raise httpx.ReadError("Server disconnected after committing the move.", request=request)
+            return httpx.Response(400, json={"detail": "The game is over. Start a new game to continue."})
+        return httpx.Response(200, json=terminal_state)
+
+    def create(**kwargs):
+        model_calls.append(kwargs)
+        assert len(model_calls) == 1, "No model request should follow a terminal board."
+        return ChatCompletion.model_validate({
+            "id": "chatcmpl-test", "object": "chat.completion", "created": 0, "model": "test-model",
+            "choices": [{"index": 0, "finish_reason": "tool_calls", "message": {
+                "role": "assistant", "content": "", "tool_calls": [tool_call("e2e4")],
+            }}],
+        })
+
+    make_agent.client.chat.completions.create = create
+    with httpx.Client(base_url="http://chess.test", transport=httpx.MockTransport(handler)) as client:
+        make_agent.chess_client = client
+        make_agent.run()
+
+    assert requests == [("POST", "/api/move"), ("GET", "/api/state")]
+    assert make_agent.last_state == terminal_state
+    assert make_agent.finished is True
+    assert "<chess_error>" in make_agent.history[-1]["content"]
+    assert "game_over: True" in make_agent.history[-1]["content"]
+
+
+def test_terminal_error_text_does_not_override_active_server_state(make_agent):
+    def handler(request):
+        if request.url.path == "/api/move":
+            return httpx.Response(400, json={"detail": "The game is over."})
+        return httpx.Response(200, json=INITIAL_STATE)
+
+    with httpx.Client(base_url="http://chess.test", transport=httpx.MockTransport(handler)) as client:
+        make_agent.chess_client = client
+        observation = make_agent.execute_tool_calls([tool_call("e2e4")])[0]
+
+    assert "The game is over." in observation["content"]
+    assert "game_over: False" in observation["content"]
+    assert make_agent.finished is False
+
+
+def test_failed_refresh_preserves_original_move_error(make_agent):
+    def handler(request):
+        if request.url.path == "/api/move":
+            return httpx.Response(400, json={"detail": "illegal move"})
+        raise httpx.ConnectError("Server unavailable.", request=request)
+
+    with httpx.Client(base_url="http://chess.test", transport=httpx.MockTransport(handler)) as client:
+        make_agent.chess_client = client
+        observation = make_agent.execute_tool_calls([tool_call("e2e4")])[0]
+
+    assert "illegal move" in observation["content"]
+    assert "Could not refresh the live board" in observation["content"]
+    assert make_agent.last_state == INITIAL_STATE
     assert make_agent.finished is False

@@ -165,6 +165,7 @@ class Agent:
         self.tools: list[dict[str, Any]] = []
         self.finished = False
         self.steps_taken = 0
+        self.consecutive_no_tool_steps = 0
 
         self.skills_path = Path(skills_path) if skills_path is not None else None
         self.skills: dict[str, dict[str, str]] = (
@@ -248,6 +249,13 @@ class Agent:
             f"[agent] step {step_number}/{self.step_limit}: requesting action",
             flush=True,
         )
+        # A text-only turn must survive in history, but the next action request
+        # should explicitly require a tool instead of repeating the same setup.
+        recovery_options = (
+            {"tool_choice": "required"}
+            if self.tools and self.consecutive_no_tool_steps
+            else {}
+        )
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -255,6 +263,7 @@ class Agent:
                 tools=self.tools,
                 reasoning_effort="medium",
                 max_completion_tokens=4096,
+                **recovery_options,
             )
         except Exception as exc:
             print(
@@ -268,7 +277,7 @@ class Agent:
         message = self.process_response(response)
         tool_names = [
             call.get("function", {}).get("name", "unknown")
-            for call in message.get("tool_calls", [])
+            for call in message.get("tool_calls") or []
             if isinstance(call, dict)
         ]
         if tool_names:
@@ -277,9 +286,17 @@ class Agent:
                 flush=True,
             )
         else:
+            choice = response.choices[0]
+            usage = self.api_responses[-1].get("usage") or {}
+            details = usage.get("completion_tokens_details") or {}
             print(
                 f"[agent] step {step_number}: response contained no parsed tool call; "
-                "the loop should preserve the response and continue",
+                f"finish_reason={choice.finish_reason}, "
+                f"content_chars={len(message.get('content') or '')}, "
+                f"reasoning_chars={len(message.get('reasoning_content') or '')}, "
+                f"completion_tokens={usage.get('completion_tokens')}, "
+                f"reasoning_tokens={details.get('reasoning_tokens')}; "
+                "preserving response and requesting a tool call next",
                 flush=True,
             )
         return message
@@ -386,7 +403,7 @@ class Agent:
             {
                 "role": "user",
                 "content": (
-                    "<working_memroy>\n"
+                    "<working_memory>\n"
                     f"{summary.strip()}\n"
                     "</working_memory>"
                 ),
@@ -456,8 +473,25 @@ class Agent:
 
                 tool_calls = message.get("tool_calls") or []
                 if tool_calls:
+                    self.consecutive_no_tool_steps = 0
                     observations = self.execute_tool_calls(tool_calls)
                     self.history.extend(observations)
+                else:
+                    self.consecutive_no_tool_steps += 1
+                    if self.tools:
+                        self.history.append(
+                            {
+                                "role": "user",
+                                "content": (
+                                    "Your previous response contained no tool call, so "
+                                    "no action was executed and the task remains active. "
+                                    "Continue from the latest tool observation and call "
+                                    "a registered tool now. Keep any reasoning concise "
+                                    "so the tool call fits within the response budget. "
+                                    "Describing an action in text does not execute it."
+                                ),
+                            }
+                        )
 
                 # TODO(2.1) Check if the agent has completed the task and set
             # TODO(2.2) Call `maybe_compact_context()` before each new action

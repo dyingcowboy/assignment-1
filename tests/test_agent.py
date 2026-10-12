@@ -307,6 +307,72 @@ def test_step_limit_raises(make_agent):
     )
 
 
+def test_text_only_response_is_preserved_and_next_request_requires_tool(make_agent):
+    text = "I will inspect the repository next."
+    agent, calls = make_agent([
+        make_text(text),
+        make_action("call_ls", "ls -la"),
+        make_raw_action("call_done", "send_message", '{"summary": "Done."}'),
+    ])
+
+    agent.run()
+
+    assert text in as_text(calls[1]["messages"])
+    assert calls[1]["messages"][-1]["role"] == "user"
+    assert "no action was executed" in calls[1]["messages"][-1]["content"]
+    assert calls[1]["tool_choice"] == "required"
+    assert "tool_choice" not in calls[0]
+    assert "tool_choice" not in calls[2]
+    assert agent.env.commands == ["ls -la"]
+    assert agent.finished is True
+
+
+def test_repeated_empty_responses_keep_step_budget_and_are_saved(make_agent):
+    agent, calls = make_agent([make_text(""), make_text("")])
+
+    with pytest.raises(StepLimitError):
+        agent.run()
+
+    assert len(calls) == 2
+    assert agent.env.commands == []
+    assert agent.consecutive_no_tool_steps == 2
+    trajectory = json.loads(Path(agent.logs_save_path).read_text())
+    assert len(trajectory["responses"]) == 2
+    assert trajectory["responses"][0]["choices"][0]["message"]["content"] == ""
+
+
+def test_truncated_reasoning_only_response_is_logged_and_preserved(make_agent, capsys):
+    agent, calls = make_agent([])
+    agent.step_limit = 1
+    response = make_completion(make_text(""))
+    response.choices[0].finish_reason = "length"
+    response.choices[0].message.tool_calls = None
+    response.choices[0].message.reasoning_content = "Still evaluating the next action."
+    raw = response.model_dump(mode="json")
+    raw["usage"] = {
+        "prompt_tokens": 100,
+        "completion_tokens": 4096,
+        "total_tokens": 4196,
+        "completion_tokens_details": {"reasoning_tokens": 4096},
+    }
+
+    def create(**kwargs):
+        calls.append(kwargs)
+        return ChatCompletion.model_validate(raw)
+
+    agent.client.chat.completions.create = create
+
+    with pytest.raises(StepLimitError):
+        agent.run()
+
+    output = capsys.readouterr().out
+    assert "finish_reason=length" in output
+    assert "content_chars=0" in output
+    assert "completion_tokens=4096" in output
+    assert "reasoning_tokens=4096" in output
+    assert agent.history[0]["reasoning_content"] == "Still evaluating the next action."
+
+
 def test_malformed_arguments_are_not_executed(make_agent):
     """A tool call whose arguments are not valid JSON runs nothing and does not crash.
 

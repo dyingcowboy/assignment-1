@@ -31,10 +31,20 @@ active, make a tool call instead of merely describing a move in text."""
 """Ablation prompt used when legal moves are omitted from observations."""
 
 PROGRAMMATIC_CHESS_PROMPT = """Two additional tools are available: simulate_move and run_python.
-You may use Python to explore hypothetical positions before choosing a move.
-simulate_move(fen, move=None) returns a dict with FEN, squares, turn, legal_moves,
-and terminal status. simulate_move does not change the state of the board but allows for simulating
-the effects of taking an action on the board. Write Python code that uses simulate move to search
-for a good move to play at this state. You can write more complex search procedures with lookahead
-and complex logic to choose the move. Once you have chosen a move, write a call to play_move at
-the end of the Python code snippet to actually play that move."""
+Inside run_python, simulate_move and play_move are already available as ordinary
+synchronous Python functions. Use simulate_move(fen, move=None) to inspect a
+position, or simulate_move(fen, move) to explore exactly one hypothetical ply.
+Simulation never changes the live game or plays an automatic opponent reply.
+
+Use the returned state fields directly: squares maps two-character square names
+(such as e4) to piece symbols; turn is white or black; in_check, game_over,
+winner, result, and legal_moves describe that position. Chain returned FENs to
+search further. Prefer these structured fields to manually parsing FEN.
+
+When a skill is available, invoke it before selecting a strategy and check that
+the search depth, scoring terms, signs, square names, and tie breaking in your
+code match its instructions. A simulated terminal position must be evaluated
+without trying another move. Choose the move with Python, then call play_move
+exactly once at the end of the snippet to commit it. After the opening exception
+specified by a loaded skill, use run_python for move selection and commitment.
+Inspect the refreshed live state before selecting another move."""

@@ -52,7 +52,41 @@ def _simulate_move(client: httpx.Client, arguments: str) -> str:
     # JSON arguments, arguments that are not an object, a missing or
     # non-string fen, a non-string move, a position or move the server rejects,
     # and a transport failure.
-    raise NotImplementedError
+
+    # 1. Parse the arguments and validate them
+    try:
+        args = json.loads(arguments)
+    except (json.JSONDecodeError, TypeError) as exc:
+        return f"<chess_error>Invalid JSON arguments: {exc}</chess_error>"
+
+    if not isinstance(args, dict):
+        return "<chess_error>Arguments must be a JSON object.</chess_error>"
+
+    # 2. Validate required 'fen' argument
+    fen = args.get("fen")
+    if not isinstance(fen, str):
+        return "<chess_error>Missing or non-string 'fen' argument.</chess_error>"
+
+    move = args.get("move")
+    if move is not None and not isinstance(move, str):
+        return "<chess_error>'move' must be a string or null.</chess_error>"
+
+    if set(args) - {"fen", "move"}:
+        return "<chess_error>Extra arguments are not allowed.</chess_error>"
+
+    # 3. Build the request to inspect or simulate the supplied position.
+    payload = {"fen": fen}
+    if move is not None:
+        payload["move"] = move
+
+    # 4. Ask the server to simulate without changing the live game.
+    try:
+        state = _request_state(client, "POST", "/api/simulate", json=payload)
+    except (ValueError, RuntimeError, httpx.HTTPError) as exc:
+        return f"<chess_error>{exc}</chess_error>"
+
+    # 5. Preserve the full JSON state for programmatic callers.
+    return json.dumps(state)
 
 
 def _play_move(client: httpx.Client, arguments: str) -> str:
@@ -112,7 +146,37 @@ def _run_python(env: Any, port: int, arguments: str) -> str:
     #
     # Return <chess_error>{message}</chess_error> if there are issues like type
     # mismatches or parsing failures.
-    raise NotImplementedError
+    try:
+        args = json.loads(arguments)
+    except (json.JSONDecodeError, TypeError) as exc:
+        return f"<chess_error>Invalid JSON arguments: {exc}</chess_error>"
+    if not isinstance(args, dict):
+        return "<chess_error>Arguments must be a JSON object.</chess_error>"
+    code = args.get("code")
+    if not isinstance(code, str):
+        return "<chess_error>Missing or non-string 'code' argument.</chess_error>"
+    encoded_code = base64.b64encode(code.encode("utf-8")).decode("utf-8")
+    if len(args) != 1:
+        return "<chess_error>Extra arguments are not allowed.</chess_error>"
+    command = [
+        "python",
+        "/opt/assignment/sandbox_python.py",
+        str(port),
+        encoded_code,
+    ]
+    try:
+        result = env.execute(command, shell=False)
+    except Exception as exc:
+        return f"<chess_error>Could not execute Python in sandbox: {exc}</chess_error>"
+    if result["returncode"] != 0:
+        error = (
+            result.get("exception_info")
+            or result.get("stderr")
+            or "Sandbox command failed."
+        )
+        return f"<chess_error>{error}</chess_error>"
+
+    return result["stdout"]
 
 
 def _invoke_skill(skills: dict[str, dict[str, str]], arguments: str) -> str:
@@ -120,7 +184,25 @@ def _invoke_skill(skills: dict[str, dict[str, str]], arguments: str) -> str:
     # TODO(3.5): parse the arguments and return the named skill's content.
     # Return <chess_error>{message}</chess_error> if there are issues like type
     # mismatches or parsing failures.
-    raise NotImplementedError
+    try:
+        args = json.loads(arguments)
+    except (json.JSONDecodeError, TypeError) as exc:
+        return f"<chess_error>Invalid JSON arguments: {exc}</chess_error>"
+
+    if not isinstance(args, dict):
+        return "<chess_error>Arguments must be a JSON object.</chess_error>"
+    if len(args) != 1:
+        return "<chess_error>Extra arguments are not allowed.</chess_error>"
+
+    skill_name = args.get("name")
+    if not isinstance(skill_name, str):
+        return "<chess_error>Missing or non-string 'name' argument.</chess_error>"
+
+    skill = skills.get(skill_name)
+    if not skill:
+        return f"<chess_error>Skill '{skill_name}' not found.</chess_error>"
+
+    return skill["content"]
 
 
 def _game_state(client: httpx.Client, reset: bool = False) -> dict:

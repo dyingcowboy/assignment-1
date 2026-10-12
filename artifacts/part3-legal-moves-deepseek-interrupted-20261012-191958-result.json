@@ -1,0 +1,154 @@
+{
+  "fen": "rnb1k1nr/ppp2ppp/8/4q3/1b1N4/2N5/PPP1BPPP/R1BQK2R w KQkq - 3 8",
+  "squares": {
+    "h8": "r",
+    "g8": "n",
+    "e8": "k",
+    "c8": "b",
+    "b8": "n",
+    "a8": "r",
+    "h7": "p",
+    "g7": "p",
+    "f7": "p",
+    "c7": "p",
+    "b7": "p",
+    "a7": "p",
+    "e5": "q",
+    "d4": "N",
+    "b4": "b",
+    "c3": "N",
+    "h2": "P",
+    "g2": "P",
+    "f2": "P",
+    "e2": "B",
+    "c2": "P",
+    "b2": "P",
+    "a2": "P",
+    "h1": "R",
+    "e1": "K",
+    "d1": "Q",
+    "c1": "B",
+    "a1": "R"
+  },
+  "turn": "white",
+  "legal_moves": [
+    "a1b1",
+    "a2a3",
+    "a2a4",
+    "b2b3",
+    "c1d2",
+    "c1e3",
+    "c1f4",
+    "c1g5",
+    "c1h6",
+    "d1d2",
+    "d1d3",
+    "d4b3",
+    "d4b5",
+    "d4c6",
+    "d4e6",
+    "d4f3",
+    "d4f5",
+    "e1d2",
+    "e1f1",
+    "e1g1",
+    "f2f3",
+    "f2f4",
+    "g2g3",
+    "g2g4",
+    "h1f1",
+    "h1g1",
+    "h2h3",
+    "h2h4"
+  ],
+  "history": [
+    {
+      "ply": 1,
+      "color": "white",
+      "san": "e4",
+      "uci": "e2e4"
+    },
+    {
+      "ply": 2,
+      "color": "black",
+      "san": "e5",
+      "uci": "e7e5"
+    },
+    {
+      "ply": 3,
+      "color": "white",
+      "san": "Nf3",
+      "uci": "g1f3"
+    },
+    {
+      "ply": 4,
+      "color": "black",
+      "san": "d5",
+      "uci": "d7d5"
+    },
+    {
+      "ply": 5,
+      "color": "white",
+      "san": "exd5",
+      "uci": "e4d5"
+    },
+    {
+      "ply": 6,
+      "color": "black",
+      "san": "Qxd5",
+      "uci": "d8d5"
+    },
+    {
+      "ply": 7,
+      "color": "white",
+      "san": "Nc3",
+      "uci": "b1c3"
+    },
+    {
+      "ply": 8,
+      "color": "black",
+      "san": "Qa5",
+      "uci": "d5a5"
+    },
+    {
+      "ply": 9,
+      "color": "white",
+      "san": "d4",
+      "uci": "d2d4"
+    },
+    {
+      "ply": 10,
+      "color": "black",
+      "san": "exd4",
+      "uci": "e5d4"
+    },
+    {
+      "ply": 11,
+      "color": "white",
+      "san": "Nxd4",
+      "uci": "f3d4"
+    },
+    {
+      "ply": 12,
+      "color": "black",
+      "san": "Qe5+",
+      "uci": "a5e5"
+    },
+    {
+      "ply": 13,
+      "color": "white",
+      "san": "Be2",
+      "uci": "f1e2"
+    },
+    {
+      "ply": 14,
+      "color": "black",
+      "san": "Bb4",
+      "uci": "f8b4"
+    }
+  ],
+  "last_move": "f8b4",
+  "in_check": false,
+  "game_over": false,
+  "status": "Your turn"
+}

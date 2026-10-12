@@ -1,0 +1,16 @@
+{
+  "prompts": [
+    [
+      {
+        "role": "system",
+        "content": "You are playing White in a chess game against a deterministic Black bot.\n\nUse the `play_move` tool for every move. Pass exactly one UCI move listed in the\nlatest `legal_moves` field, then inspect the returned board before choosing the\nnext move. Uppercase pieces are White; lowercase pieces are Black; `.` is an\nempty square. The server applies Black's reply automatically, so never submit a\nmove for Black and never assume what Black played. Promotion moves include a\npiece suffix, for example `e7e8q`.\n\nContinue until the returned state says `game_over: true`. While the game is\nactive, make a tool call instead of merely describing a move in text.\n\nTwo additional tools are available: simulate_move and run_python.\nInside run_python, simulate_move and play_move are already available as ordinary\nsynchronous Python functions. Use simulate_move(fen, move=None) to inspect a\nposition, or simulate_move(fen, move) to explore exactly one hypothetical ply.\nSimulation never changes the live game or plays an automatic opponent reply.\n\nUse the returned state fields directly: squares maps two-character square names\n(such as e4) to piece symbols; turn is white or black; in_check, game_over,\nwinner, result, and legal_moves describe that position. Chain returned FENs to\nsearch further. Prefer these structured fields to manually parsing FEN.\n\nWhen a skill is available, invoke it before selecting a strategy and check that\nthe search depth, scoring terms, signs, square names, and tie breaking in your\ncode match its instructions. A simulated terminal position must be evaluated\nwithout trying another move. Choose the move with Python, then call play_move\nexactly once at the end of the snippet to commit it. After the opening exception\nspecified by a loaded skill, use run_python for move selection and commitment.\nInspect the refreshed live state before selecting another move.\n\nReusable skills are available. Call `invoke_skill` with a skill's name to load its instructions, and follow them in place of your default approach.\n\n<skills>\nname: select-move\ndescription: Strategy to pick a chess move.\n</skills>\n"
+      },
+      {
+        "role": "user",
+        "content": "Play this game as White. Choose one move from legal_moves and call play_move.\n\n<chess_state>\nstatus: Your turn\nturn: white\nin_check: False\ngame_over: False\nfen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\nhuman_move: (none)\nengine_move: (none)\nboard:\n    a b c d e f g h\n8 | r n b q k b n r | 8\n7 | p p p p p p p p | 7\n6 | . . . . . . . . | 6\n5 | . . . . . . . . | 5\n4 | . . . . . . . . | 4\n3 | . . . . . . . . | 3\n2 | P P P P P P P P | 2\n1 | R N B Q K B N R | 1\n    a b c d e f g h\nrecent_history: (none)\nlegal_moves: a2a3 a2a4 b1a3 b1c3 b2b3 b2b4 c2c3 c2c4 d2d3 d2d4 e2e3 e2e4 f2f3 f2f4 g1f3 g1h3 g2g3 g2g4 h2h3 h2h4\n</chess_state>"
+      }
+    ]
+  ],
+  "responses": [],
+  "compactions": []
+}

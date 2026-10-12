@@ -1,0 +1,129 @@
+make run-obs-experiment-no-legal-moves MODEL="deepseek-flash" MODEL_TAG=deepseek
+make[1]: Entering directory '/home/johnathan/study/cmu-agents/assignments/assignment-1'
+uv run assignment-play-chess --model deepseek-flash --task tasks/chess-terminal-move --patch artifacts/fix.patch \
+	--omit-legal-moves --step-limit 200 --sandbox-timeout 1800 \
+	--compact-threshold-tokens 6000 \
+	--trajectory artifacts/part3-no-legal-moves-deepseek.json --result artifacts/part3-no-legal-moves-deepseek-result.json
+🦖 INFO     Starting Modal sandbox                                              
+🦖 INFO     Sandbox sb-HVHddNySOKzRcoXfKAxBxk created in 7.63s                  
+🦖 INFO     Modal logs:                                                         
+            https://modal.com/apps/xxs-96866/main/deployed/swe-rex?activeTab=log
+            s&taskId=ta-01M4QZZV1NMSXJ9GCWDCH8EAZS                              
+🦖 INFO     Starting SWE-ReX runtime at                                         
+            https://ta-01m4qzzv1nmsxj9gcwdch8eazs-8880-j1925uypw9ktav3x28aesmnqs
+            .w.modal.host                                                       
+Chess server: https://ta-01m4qzzv1nmsxj9gcwdch8eazs-8000-j1925uypw9ktav3x28aesmnqs.w.modal.host
+[agent] step 1/200: requesting action
+[agent] step 1: tool call(s): play_move
+[agent] step 2/200: requesting action
+[agent] step 2: tool call(s): play_move
+[agent] step 3/200: requesting action
+[agent] step 3: tool call(s): play_move
+[agent] step 4/200: requesting action
+[agent] step 4: tool call(s): play_move
+[agent] step 5/200: requesting action
+[agent] step 5: tool call(s): play_move
+[agent] step 6/200: requesting action
+[agent] step 6: tool call(s): play_move
+[agent] step 7/200: requesting action
+[agent] step 7: tool call(s): play_move
+[agent] step 8/200: requesting action
+[agent] step 8: tool call(s): play_move
+[agent] step 9/200: requesting action
+[agent] step 9: tool call(s): play_move
+[agent] step 10/200: requesting action
+[agent] step 10: tool call(s): play_move
+[agent] step 11/200: requesting action
+[agent] step 11: tool call(s): play_move
+[agent] step 12/200: requesting action
+[agent] step 12: tool call(s): play_move
+[agent] step 13/200: requesting action
+[agent] step 13: tool call(s): play_move
+[agent] step 14/200: requesting action
+[agent] step 14: tool call(s): play_move
+[agent] step 15/200: requesting action
+[agent] step 15: tool call(s): play_move
+[agent] step 16/200: requesting action
+[agent] step 16: tool call(s): play_move
+[agent] step 17/200: requesting action
+[agent] step 17: tool call(s): play_move
+[agent] step 18/200: requesting action
+[agent] step 18: tool call(s): play_move
+[agent] step 19/200: requesting action
+[agent] step 19: tool call(s): play_move
+[agent] step 20/200: requesting action
+[agent] step 20: tool call(s): play_move
+[agent] step 21/200: requesting action
+[agent] step 21: tool call(s): play_move
+[agent] step 22/200: requesting action
+[agent] step 22: tool call(s): play_move
+[agent] step 23/200: requesting action
+[agent] step 23: tool call(s): play_move
+[agent] step 24/200: requesting action
+[agent] step 24: response contained no parsed tool call; finish_reason=length, content_chars=0, reasoning_chars=12611, completion_tokens=4096, reasoning_tokens=4096; preserving response and requesting a tool call next
+[agent] step 25/200: requesting action
+[agent] step 25: tool call(s): play_move
+[agent] step 26/200: requesting action
+[agent] step 26: tool call(s): play_move
+[agent] step 27/200: requesting action
+[agent] step 27: tool call(s): play_move
+[agent] step 28/200: requesting action
+[agent] step 28: tool call(s): play_move
+[agent] step 29/200: requesting action
+[agent] step 29: tool call(s): play_move
+[agent] step 30/200: requesting action
+[agent] step 30: tool call(s): play_move
+[agent] step 31/200: requesting action
+[agent] step 31: tool call(s): play_move
+[agent] step 32/200: requesting action
+[agent] step 32: tool call(s): play_move
+[agent] step 33/200: requesting action
+[agent] step 33: tool call(s): play_move
+[agent] step 34/200: requesting action
+[agent] step 34: tool call(s): play_move
+[agent] step 35/200: requesting action
+[agent] step 35: response contained no parsed tool call; finish_reason=length, content_chars=0, reasoning_chars=11731, completion_tokens=4096, reasoning_tokens=4096; preserving response and requesting a tool call next
+[agent] step 36/200: requesting action
+[agent] step 36: tool call(s): play_move
+[agent] step 37/200: requesting action
+[agent] step 37: tool call(s): play_move
+[agent] step 38/200: requesting action
+[agent] step 38: response contained no parsed tool call; finish_reason=length, content_chars=0, reasoning_chars=11885, completion_tokens=4096, reasoning_tokens=4096; preserving response and requesting a tool call next
+[agent] step 39/200: requesting action
+[agent] step 39: tool call(s): play_move
+[agent] step 40/200: requesting action
+[agent] step 40: tool call(s): play_move
+[agent] step 41/200: requesting action
+[agent] step 41: tool call(s): play_move
+[agent] step 42/200: requesting action
+[agent] step 42: tool call(s): play_move
+[agent] step 43/200: requesting action
+[agent] step 43: tool call(s): play_move
+[agent] step 44/200: requesting action
+[agent] step 44: response contained no parsed tool call; finish_reason=length, content_chars=0, reasoning_chars=11673, completion_tokens=4096, reasoning_tokens=4096; preserving response and requesting a tool call next
+[agent] step 45/200: requesting action
+[agent] step 45: tool call(s): play_move
+[agent] step 46/200: requesting action
+[agent] step 46: tool call(s): play_move
+[agent] step 47/200: requesting action
+[agent] step 47: tool call(s): play_move
+[agent] step 48/200: requesting action
+[agent] step 48: tool call(s): play_move
+[agent] step 49/200: requesting action
+[agent] step 49: tool call(s): play_move
+[agent] step 50/200: requesting action
+[agent] step 50: tool call(s): play_move
+[agent] step 51/200: requesting action
+[agent] step 51: tool call(s): play_move
+[agent] step 52/200: requesting action
+[agent] step 52: tool call(s): play_move
+[agent] step 53/200: requesting action
+[agent] step 53: tool call(s): play_move
+[agent] step 54/200: requesting action
+[agent] step 54: tool call(s): play_move
+[agent] step 55/200: requesting action
+[agent] step 55: tool call(s): play_move
+Result: artifacts/part3-no-legal-moves-deepseek-result.json
+Trajectory: artifacts/part3-no-legal-moves-deepseek.json
+🦖 DEBUG    Ensuring deployment is stopped because object is deleted            
+make[1]: Leaving directory '/home/johnathan/study/cmu-agents/assignments/assignment-1'

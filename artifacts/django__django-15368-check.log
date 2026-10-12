@@ -1,0 +1,60 @@
+INFO Using published image for django__django-15368: swebench/sweb.eval.x86_64.django_1776_django-15368:latest
+INFO Building image from docker registry swebench/sweb.eval.x86_64.django_1776_django-15368:latest
+WARNING DOCKER_USERNAME and DOCKER_PASSWORD not set. Using public images.
+INFO Starting Modal sandbox
+INFO Sandbox sb-7kIv05AjTdPUFaaXQHItPj created in 2.40s
+INFO Modal logs: https://modal.com/apps/xxs-96866/main/deployed/swe-rex?activeTab=logs&taskId=ta-01M4R0E4FHZTEB0C0JY5VPV4AS
+INFO Starting SWE-ReX runtime at https://ta-01m4r0e4fhzteb0c0jy5vpv4as-8880-w7esuvt6l5i77wf1t9ggqu6bm.w.modal.host
+INFO Applied candidate patch
+INFO Applied test patch
+diff --git a/django/db/models/query.py b/django/db/models/query.py
+index f8d848e926..f2f9797d88 100644
+--- a/django/db/models/query.py
++++ b/django/db/models/query.py
+@@ -670,7 +670,7 @@ class QuerySet:
+                 when_statements = []
+                 for obj in batch_objs:
+                     attr = getattr(obj, field.attname)
+-                    if not isinstance(attr, Expression):
++                    if not hasattr(attr, 'resolve_expression'):
+                         attr = Value(attr, output_field=field)
+                     when_statements.append(When(pk=obj.pk, then=attr))
+                 case_statement = Case(*when_statements, output_field=field)
+
+task: django__django-15368
+
+FAIL_TO_PASS (1/1)
+  [   PASS] test_f_expression (queries.test_bulk_update.BulkUpdateTests)
+
+PASS_TO_PASS (29/29)
+  [   PASS] test_batch_size (queries.test_bulk_update.BulkUpdateNoteTests)
+  [   PASS] test_foreign_keys_do_not_lookup (queries.test_bulk_update.BulkUpdateNoteTests)
+  [   PASS] test_functions (queries.test_bulk_update.BulkUpdateNoteTests)
+  [   PASS] test_multiple_fields (queries.test_bulk_update.BulkUpdateNoteTests)
+  [   PASS] test_set_field_to_null (queries.test_bulk_update.BulkUpdateNoteTests)
+  [   PASS] test_set_mixed_fields_to_null (queries.test_bulk_update.BulkUpdateNoteTests)
+  [   PASS] test_simple (queries.test_bulk_update.BulkUpdateNoteTests)
+  [   PASS] test_unsaved_models (queries.test_bulk_update.BulkUpdateNoteTests)
+  [   PASS] test_booleanfield (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_custom_db_columns (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_custom_pk (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_datetime_field (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_empty_objects (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_falsey_pk_value (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_field_references (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_inherited_fields (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_invalid_batch_size (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_ipaddressfield (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_json_field (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_large_batch (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_no_fields (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_nonexistent_field (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_nullable_fk_after_related_save (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_only_concrete_fields_allowed (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_unsaved_parent (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_unspecified_unsaved_parent (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_update_custom_primary_key (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_update_primary_key (queries.test_bulk_update.BulkUpdateTests)
+  [   PASS] test_updated_rows_when_passing_duplicates (queries.test_bulk_update.BulkUpdateTests)
+
+RESOLVED: yes

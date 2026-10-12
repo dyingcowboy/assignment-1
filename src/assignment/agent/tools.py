@@ -158,8 +158,68 @@ PLAY_MOVE_TOOL: dict = {
     },
 }
 
-# TODO(3.3): Define the `simulate_move` tool, like the `play_move` tool.
-SIMULATE_MOVE_TOOL: dict = {}
+# Inspect a hypothetical position without changing the live game.
+SIMULATE_MOVE_TOOL: dict = {
+    "type": "function",
+    "function": {
+        "name": "simulate_move",
+        "description": (
+            "Inspect a position given by FEN, or simulate exactly one UCI move "
+            "for the side to move in that position. Set move to null to inspect "
+            "the position without making a move. Returns the resulting FEN, "
+            "board, legal moves, and terminal status. Does not change the live "
+            "game or automatically play the opponent's reply."
+        ),
+        "strict": True,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "fen": {
+                    "type": "string",
+                    "description": (
+                        "Complete six-field Forsyth-Edwards Notation for the "
+                        "starting position."
+                    ),
+                },
+                "move": {
+                    "type": ["string", "null"],
+                    "description": (
+                        "One UCI move, such as e2e4 or e7e8q, or null to "
+                        "inspect the FEN without making a move."
+                    ),
+                },
+            },
+            # Strict schemas require every key; null makes move optional
+            # in meaning while keeping it present in the JSON arguments.
+            "required": ["fen", "move"],
+            "additionalProperties": False,
+        },
+    },
+}
 
-# TODO()
-RUN_PYTHON_TOOL: dict = {}
+# Run model-written Python in the remote sandbox.
+RUN_PYTHON_TOOL: dict = {
+    "type": "function",
+    "function": {
+        "name": "run_python",
+        "description": (
+            "Execute Python code in the remote chess sandbox and return JSON "
+            "with stdout, stderr, and error. The code can call simulate_move "
+            "and play_move as ordinary synchronous Python functions. Use "
+            "simulate_move to explore hypothetical positions; play_move "
+            "commits a move to the live game and applies Black's reply."
+        ),
+        "strict": True,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "Python source code to execute in the sandbox.",
+                },
+            },
+            "required": ["code"],
+            "additionalProperties": False,
+        },
+    },
+}

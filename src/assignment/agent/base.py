@@ -19,6 +19,7 @@ from openai import OpenAI
 import yaml
 
 from assignment.env import Environment
+from assignment.agent.provider import configure_provider
 from assignment.agent.tools import INVOKE_SKILL_TOOL
 
 load_dotenv()
@@ -126,6 +127,7 @@ class Agent:
             base_url=base_url,
             max_retries=max_retries,
         )
+        configure_provider(self.client)
 
         self.logs_save_path = logs_save_path
         self.step_limit = step_limit
@@ -345,6 +347,28 @@ class Agent:
 
         return self.compact_threshold_tokens is not None
 
+    def _compaction_cut_index(self) -> int:
+        """Keep recent turns and at least the latest complete tool action."""
+
+        assistant_positions = [
+            i
+            for i, message in enumerate(self.history)
+            if message.get("role") == "assistant"
+        ]
+        keep = self.compaction_keep_recent_steps
+        if len(assistant_positions) <= keep:
+            return 0
+
+        cut = assistant_positions[-keep]
+        tool_action_positions = [
+            i for i in assistant_positions if self.history[i].get("tool_calls")
+        ]
+        if tool_action_positions:
+            # A text-only turn does not replace the latest tool action. Keep
+            # that action and the entire suffix, including every observation.
+            cut = min(cut, tool_action_positions[-1])
+        return cut
+
     def compact_context(self):
         """Replace parts of prompt with model-generated working memory. Changes the
         content that `build_prompt` emits."""
@@ -357,13 +381,7 @@ class Agent:
         # messages verbatim and at least the latest complete assistant action
         # with all linked tool observations. The resulting summary should change
         # what `build_prompt` emits, and reduce the length of the prompt.
-        assistant_positions = [
-            i
-            for i, message in enumerate(self.history)
-            if message.get("role") == "assistant"
-        ]
-        keep = self.compaction_keep_recent_steps
-        cut = assistant_positions[-keep] if len(assistant_positions) > keep else 0
+        cut = self._compaction_cut_index()
 
         compaction_prompt = [
             {
@@ -431,12 +449,8 @@ class Agent:
 
         prompt_before = deepcopy(self.build_prompt())
 
-        # Not enough steps (each assistant turn corresponds to a step) to force
-        # compaction yet
-        if (
-            len([m for m in prompt_before if m.get("role") == "assistant"])
-            <= self.compaction_keep_recent_steps
-        ):
+        # No old prefix can be summarized without dropping required history.
+        if self._compaction_cut_index() == 0:
             return False
 
         compaction_prompt, compaction_response = self.compact_context()

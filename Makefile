@@ -23,6 +23,8 @@ DEEPSEEK_MODEL ?= deepseek-flash
 GPT_OSS_MODEL ?= openai/gpt-oss-120b
 MODEL_TAG ?= $(subst /,-,$(MODEL))
 COMPACT_THRESHOLD ?= 6000
+# Apply the same context policy to both observation conditions. Zero disables it.
+CHESS_COMPACTION_ARGS = --compact-threshold-tokens $(COMPACT_THRESHOLD)
 STEPS ?= 200
 CHESS_TIMEOUT ?= 1800
 OBS_NO_LEGAL_TRAJECTORY ?= artifacts/part3-no-legal-moves-$(MODEL_TAG).json
@@ -82,16 +84,19 @@ run-swebench-agent:
 run-chess-agent:
 	uv run assignment-play-chess --model $(MODEL) --task $(TASK) --patch $(PATCH) \
 		--step-limit $(STEPS) --sandbox-timeout $(CHESS_TIMEOUT) \
+		$(CHESS_COMPACTION_ARGS) \
 		--trajectory $(TRAJECTORY) --result $(RESULT)
 
 run-obs-experiment-no-legal-moves:
 	uv run assignment-play-chess --model $(MODEL) --task $(TASK) --patch $(PATCH) \
 		--omit-legal-moves --step-limit $(STEPS) --sandbox-timeout $(CHESS_TIMEOUT) \
+		$(CHESS_COMPACTION_ARGS) \
 		--trajectory $(OBS_NO_LEGAL_TRAJECTORY) --result $(OBS_NO_LEGAL_RESULT)
 
 run-obs-experiment-legal-moves:
 	uv run assignment-play-chess --model $(MODEL) --task $(TASK) --patch $(PATCH) \
 		--step-limit $(STEPS) --sandbox-timeout $(CHESS_TIMEOUT) \
+		$(CHESS_COMPACTION_ARGS) \
 		--trajectory $(OBS_LEGAL_TRAJECTORY) --result $(OBS_LEGAL_RESULT)
 
 run-obs-deepseek-no-legal:

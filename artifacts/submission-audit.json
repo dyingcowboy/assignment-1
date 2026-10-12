@@ -1,0 +1,49 @@
+{
+  "statistics": {
+    "part3-trajectory.json": {
+      "model": "deepseek-flash",
+      "action_requests": 28,
+      "play_move_calls": 28,
+      "illegal_calls": 0,
+      "invalid_move_rate": 0.0,
+      "game_over": true,
+      "status": "Draw",
+      "plies": 53,
+      "compactions": 0,
+      "length_responses": 0,
+      "replay_verified": true
+    },
+    "part3-no-legal-moves-deepseek.json": {
+      "model": "deepseek-flash",
+      "action_requests": 55,
+      "play_move_calls": 51,
+      "illegal_calls": 3,
+      "invalid_move_rate": 0.058823529411764705,
+      "game_over": true,
+      "status": "White wins",
+      "plies": 95,
+      "compactions": 21,
+      "length_responses": 4,
+      "replay_verified": true
+    },
+    "part3-legal-moves-deepseek.json": {
+      "model": "deepseek-flash",
+      "action_requests": 29,
+      "play_move_calls": 23,
+      "illegal_calls": 0,
+      "invalid_move_rate": 0.0,
+      "game_over": true,
+      "status": "Black wins",
+      "plies": 46,
+      "compactions": 12,
+      "length_responses": 6,
+      "replay_verified": true
+    }
+  },
+  "missing": [
+    "artifacts/part3-no-legal-moves-gpt-oss.json",
+    "artifacts/part3-no-legal-moves-gpt-oss-result.json",
+    "artifacts/part3-legal-moves-gpt-oss.json",
+    "artifacts/part3-legal-moves-gpt-oss-result.json"
+  ]
+}

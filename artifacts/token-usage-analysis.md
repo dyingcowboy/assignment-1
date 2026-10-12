@@ -2,7 +2,7 @@
 
 本次实验使用 `deepseek-flash`，任务为 `django__django-15368`，基础提交为 `e972620ada4f9ed7bc57f28e133e85c85b0a7b20`。压缩版的触发阈值为 6,000 token，保留最近一个完整步骤；baseline 关闭压缩。两组使用相同任务、工具和 sandbox 镜像，但由模型独立选择行动。
 
-压缩版此前已通过 `check-swebench`。本次 baseline 也通过检查：`FAIL_TO_PASS` 为 1/1，`PASS_TO_PASS` 为 29/29，结果为 `RESOLVED: yes`。Baseline 的检查输出保存在 [检查日志](django__django-15368-baseline-check.log) 中；压缩版的通过依据是此前运行的反馈，未另存对应检查日志。
+压缩版与 baseline 均通过检查：`FAIL_TO_PASS` 为 1/1，`PASS_TO_PASS` 为 29/29，结果为 `RESOLVED: yes`。Baseline 的检查输出保存在 [检查日志](django__django-15368-baseline-check.log) 中；压缩版于 2026-10-12 在全新沙箱中复验通过，输出保存在 [检查日志](django__django-15368-check.log) 中。
 
 ## 统计结果
 

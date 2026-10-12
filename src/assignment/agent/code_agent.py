@@ -57,13 +57,15 @@ class CodeAgent(Agent):
             "system": self.env.system,
             "version": self.env.version,
         }
-        self.system_prompt = f"""You are a coding agent solving a software issue.Inspect the repository and reproduce the reported problem before editing.
-    Use the provided tools to make changes and run relevant tests.
-    Base your conclusions on tool results, and report failures accurately.
-<system_information>
-    {json.dumps(system_information, indent=2)}
-</system_information>
-    """
+        self.system_prompt = (
+            "You are a coding agent solving a software issue. "
+            "Inspect the repository and reproduce the reported problem before editing.\n"
+            "Use the provided tools to make changes and run relevant tests.\n"
+            "Base your conclusions on tool results, and report failures accurately.\n"
+            "<system_information>\n"
+            f"{json.dumps(system_information, indent=2)}\n"
+            "</system_information>"
+        )
         # TODO(1.4): If any skills are available to the agent, make their
         # descriptions/metadata available to the agent in the prompt.
         if self.skills:
@@ -92,13 +94,10 @@ class CodeAgent(Agent):
         # observations relayed to the agent instead of exceptions.
         observations = []
         for call in tool_calls:
-            call_id = call["id"]
-            function = call["function"]
-            name = function["name"]
-            raw_arguments = function["arguments"]
+            call_id = call.get("id", "") if isinstance(call, dict) else ""
             observation = {
                 "role": "tool",
-                "tool_call_id": call_id,
+                "tool_call_id": call_id if isinstance(call_id, str) else "",
                 "content": "",
             }
             if self.finished:
@@ -109,6 +108,17 @@ class CodeAgent(Agent):
                 continue
 
             try:
+                if not isinstance(call, dict) or not isinstance(call_id, str) or not call_id:
+                    raise ValueError("Tool calls require a non-empty string id.")
+                function = call.get("function")
+                if not isinstance(function, dict):
+                    raise ValueError("Tool calls require a function object.")
+                name = function.get("name")
+                raw_arguments = function.get("arguments")
+                if not isinstance(name, str):
+                    raise ValueError("Tool name must be a string.")
+                if not isinstance(raw_arguments, str):
+                    raise ValueError("Tool arguments must be a JSON string.")
                 arguments = json.loads(raw_arguments)
 
                 if not isinstance(arguments, dict):
